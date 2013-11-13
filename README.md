@@ -1,6 +1,8 @@
 Stochastic Outlier Selection
 ============================
 
+*On Thursday, November 21, 2013, SOS will be presented at the [NYC Machine Learning meetup](http://www.meetup.com/NYC-Machine-Learning/events/149093182/).*
+
 Stochastic Outlier Selection (SOS) is an unsupervised outlier selection algorithm. It uses the concept of affinity to compute  an outlier probability for each data point.
 
 ![SOS](doc/sos.png)
