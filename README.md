@@ -16,24 +16,24 @@ A Python implementation of the SOS algorithm can be found in the bin directory. 
 ```bash
 git clone https://github.com/jeroenjanssens/sos.git 
 cd sos/bin
-< iris.csv ./sos -p 20 | sort -nr | head
-0.97848576
-0.95493157
-0.93740898
-0.87501047
-0.83656144
-0.82453133
-0.79702956
-0.79482970
-0.75118016
-0.74424569
+< iris.csv ./sos -p 30 | sort -nr | head
+0.92552418
+0.91794955
+0.81657372
+0.79410068
+0.77251273
+0.76652991
+0.71135211
+0.69634175
+0.69305280
+0.68967627
 ```
 
-Adding a threshold causes SOS to output 0s and 1s instead of outlier probabilities. If we set the threshold to 0.75 then we see that out of the 150 data points, 9 are selected as outliers:
+Adding a threshold causes SOS to output 0s and 1s instead of outlier probabilities. If we set the threshold to 0.75 then we see that out of the 150 data points, 6 are selected as outliers:
 
 ```bash
-< iris.csv ./sos -p 20 -t 0.75 | paste -sd+ | bc
-9
+< iris.csv ./sos -p 30 -t 0.75 | paste -sd+ | bc
+6
 ```
 
 Under the hood, SOS simply needs a two-dimensional NumPy array. A PyPI package is in the making.
