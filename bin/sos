@@ -1,0 +1,191 @@
+#!/usr/bin/env python
+#
+# Stochastic Outlier Selection
+# 
+# Copyright (c) 2013, Jeroen Janssens
+# All rights reserved.
+#
+# Distributed under the terms of the BSD Simplified License.
+# The full license is in the LICENSE file, distributed with this software.
+#
+# For more information about SOS, see https://github.com/jeroenjanssens/sos
+# J.H.M. Janssens, F. Huszar, E.O. Postma, and H.J. van den Herik. Stochastic
+# Outlier Selection. Technical Report TiCC TR 2012-001, Tilburg University,
+# Tilburg, the Netherlands, 2012.
+#
+# Please note that because SOS is inspired by t-SNE (created by Laurens 
+# van der Maaten; see http://homepage.tudelft.nl/19j49/t-SNE.html),
+# this code borrows functionality from the Python implementation,
+# namely the functions x2p and Hbeta.
+
+
+import argparse
+import logging
+import numpy as np
+import sys
+
+
+log_format = '%(asctime)-15s  [%(levelname)s] - %(name)s: %(message)s'
+logging.basicConfig(format=log_format, level=logging.INFO)
+log = logging.getLogger('SOS')
+
+
+def x2d(X, metric):
+    """Computer dissimilarity matrix."""
+
+    metric = metric.lower()
+    (n, d) = X.shape
+    log.debug("The data set is %dx%d", n, d)
+    if metric == 'none':
+        if n != d:
+            log.error(("If you specify 'none' as the metric, the data set "
+                "should be a square dissimilarity matrix"))
+            exit(1)
+        else:
+            log.debug("The data set is a dissimilarity matrix")
+            D = X
+    elif metric == 'euclidean':
+        log.debug("Computing dissimilarity matrix using Euclidean metric")
+        sumX = np.sum(np.square(X), 1)
+        D = np.sqrt(np.add(np.add(-2 * np.dot(X, X.T), sumX).T, sumX))
+    else:
+        try:
+            from scipy.spatial import distance
+        except ImportError as e:
+            log.error(("Please install scipy if you wish to use a metric "
+                "other than 'euclidean' or 'none'"))
+            exit(1)
+        else:
+            log.debug("Computing dissimilarity matrix using %s metric",
+                metric.capitalize())
+            D = distance.squareform(distance.pdist(X, metric))
+    return D
+
+
+def d2a(D, perplexity, tol=1e-5):
+    """Return affinity matrix.
+
+    Performs a binary search to get affinities in such a way that each
+    conditional Gaussian has the same perplexity.
+
+    """
+
+    (n, _) = D.shape
+    A = np.zeros((n, n))
+    beta = np.ones((n, 1))
+    logU = np.log(perplexity)
+
+    for i in range(n):
+        if i % 100 == 0:
+            log.debug("Computing affinities (%d/%d)", i, n)
+
+        # Compute the Gaussian kernel and entropy for the current precision
+        betamin = -np.inf 
+        betamax =  np.inf
+        Di = D[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))]
+        (H, thisA) = get_perplexity(Di, beta[i])
+
+        # Evaluate whether the perplexity is within tolerance
+        Hdiff = H - logU
+        tries = 0
+        while np.abs(Hdiff) > tol and tries < 50:
+            # If not, increase or decrease precision
+            if Hdiff > 0:
+                betamin = beta[i]
+                if betamax == np.inf or betamax == -np.inf:
+                    beta[i] = beta[i] * 2.0
+                else:
+                    beta[i] = (beta[i] + betamax) / 2.0
+            else:
+                betamax = beta[i]
+                if betamin == np.inf or betamin == -np.inf:
+                    beta[i] = beta[i] / 2.0
+                else:
+                    beta[i] = (beta[i] + betamin) / 2.0
+            # Recompute the values
+            (H, thisA) = get_perplexity(Di, beta[i])
+            Hdiff = H - logU
+            tries += 1
+
+        # Set the final row of A
+        A[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))] = thisA
+
+    log.debug("Computing affinities (%d/%d)", n, n)
+    return A
+
+
+def get_perplexity(D, beta):
+    """Compute the perplexity and the A-row for a specific value of the
+    precision of a Gaussian distribution.
+
+    """
+
+    A = np.exp(-D * beta)
+    sumA = sum(A)
+    H = np.log(sumA) + beta * np.sum(D * A) / sumA
+    return H, A
+
+
+def a2b(A):
+    log.debug("Computing binding probabilities")
+    B = A / A.sum(axis=1)[:,np.newaxis]
+    return B
+
+
+def b2o(B):
+    log.debug("Computing outlier probabilities")
+    O = np.prod(1-B, 0)
+    return O
+
+
+def sos(X, metric, perplexity):
+    D = x2d(X, metric)
+    A = d2a(D, perplexity)
+    B = a2b(A)
+    O = b2o(B)
+    return O
+
+
+def main():
+    log.setLevel(logging.INFO)
+    parser = argparse.ArgumentParser(description="Stochastic Outlier Selection")
+    parser.add_argument('-t', '--threshold', type=float, default=None,
+        help=("Float between 0.0 and 1.0 to use as threshold for selecting "
+            "outliers. By default, this is not set, causing the outlier "
+            "probabilities instead of the classification to be outputted"))
+    parser.add_argument('-d', '--delimiter', type=str, default=',', help=(
+        "String to use to separate values. By default, this is a comma."))
+    parser.add_argument('-i', '--input', type=argparse.FileType('rb'),
+        default=sys.stdin, help=("File to read data set from. By default, "
+            "this is <stdin>."))
+    parser.add_argument('-m', '--metric', type=str, default='euclidean', help=(
+        "String indicating the metric to use to compute the dissimilarity "
+        "matrix. By default, this is 'euclidean'. Use 'none' if the data set "
+        "is a dissimilarity matrix."))
+    parser.add_argument('-o', '--output', type=argparse.FileType('wb'),
+        default=sys.stdout, help=("File to write the computed outlier "
+            "probabilities to. By default, this is <stdout>."))
+    parser.add_argument('-p', '--perplexity', type=float, default=30.0,
+        help="Float to use as perpexity. By default, this is 30.0.")
+    parser.add_argument('-v', '--verbose', action='store_true', default=False,
+        help="Print debug messages to <stderr>.")
+    args = parser.parse_args()
+
+    if args.verbose:
+        log.setLevel(logging.DEBUG)
+
+    log.debug("Reading data set from %s", args.input.name)
+    X = np.loadtxt(args.input, delimiter=args.delimiter, ndmin=2)
+    O = sos(X, args.metric, args.perplexity)
+    if args.threshold is None:
+        log.debug("Writing outlier probabilities to %s", args.output.name)
+        np.savetxt(args.output, O, '%1.8f')
+    else:
+        log.debug("Writing outlier selections to %s", args.output.name)
+        np.savetxt(args.output, O>=args.threshold, '%1d')
+
+    return 0
+
+
+if __name__ == '__main__':
+    exit(main())
