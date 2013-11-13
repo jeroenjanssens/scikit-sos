@@ -7,6 +7,7 @@ For more information about SOS, see the technical report: J.H.M. Janssens, F. Hu
 
 A Python implementation of the SOS algorithm can be found in the bin directory. This implementation only depends on NumPy and can be used from the command-line.
 
+![SOS](doc/banana.png)
 
 License
 -------
