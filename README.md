@@ -14,7 +14,8 @@ Selecting outliers from command-line
 A Python implementation of the SOS algorithm can be found in the bin directory. This implementation only depends on NumPy and can be used from the command-line. For example, if we apply SOS with a perplexity of 20 to the Iris dataset, which is included, we obtain the following outlier probabilities:
 
 ```bash
-cd bin
+git clone https://github.com/jeroenjanssens/sos.git 
+cd sos/bin
 < iris.csv ./sos -p 20 | sort -nr | head
 0.97848576
 0.95493157
