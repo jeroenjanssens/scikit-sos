@@ -138,10 +138,13 @@ def b2o(B):
     return O
 
 
-def sos(X, metric, perplexity):
+def sos(X, metric, perplexity, args):
     D = x2d(X, metric)
     A = d2a(D, perplexity)
     B = a2b(A)
+    if args.binding_matrix:
+        np.savetxt(args.output, B, '%1.8f', delimiter=',')
+        exit()
     O = b2o(B)
     return O
 
@@ -149,6 +152,8 @@ def sos(X, metric, perplexity):
 def main():
     log.setLevel(logging.INFO)
     parser = argparse.ArgumentParser(description="Stochastic Outlier Selection")
+    parser.add_argument('-b', '--binding-matrix', action='store_true',
+        default=False, help="Print binding matrix", dest="binding_matrix")
     parser.add_argument('-t', '--threshold', type=float, default=None,
         help=("Float between 0.0 and 1.0 to use as threshold for selecting "
             "outliers. By default, this is not set, causing the outlier "
@@ -176,7 +181,7 @@ def main():
 
     log.debug("Reading data set from %s", args.input.name)
     X = np.loadtxt(args.input, delimiter=args.delimiter, ndmin=2)
-    O = sos(X, args.metric, args.perplexity)
+    O = sos(X, args.metric, args.perplexity, args)
     if args.threshold is None:
         log.debug("Writing outlier probabilities to %s", args.output.name)
         np.savetxt(args.output, O, '%1.8f')
