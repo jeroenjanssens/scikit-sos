@@ -88,16 +88,16 @@ def d2a(D, perplexity, tol=1e-5):
         # Evaluate whether the perplexity is within tolerance
         Hdiff = H - logU
         tries = 0
-        while np.abs(Hdiff) > tol and tries < 50:
+        while np.abs(Hdiff) > tol and tries < 5000:
             # If not, increase or decrease precision
             if Hdiff > 0:
-                betamin = beta[i]
+                betamin = beta[i].copy()
                 if betamax == np.inf or betamax == -np.inf:
                     beta[i] = beta[i] * 2.0
                 else:
                     beta[i] = (beta[i] + betamax) / 2.0
             else:
-                betamax = beta[i]
+                betamax = beta[i].copy()
                 if betamin == np.inf or betamin == -np.inf:
                     beta[i] = beta[i] / 2.0
                 else:
