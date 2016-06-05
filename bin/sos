@@ -47,7 +47,9 @@ def x2d(X, metric):
     elif metric == 'euclidean':
         log.debug("Computing dissimilarity matrix using Euclidean metric")
         sumX = np.sum(np.square(X), 1)
-        D = np.sqrt(np.add(np.add(-2 * np.dot(X, X.T), sumX).T, sumX))
+	# np.abs protects against extremely small negative values 
+	# that may arise due to floating point arithmetic errors
+        D = np.sqrt( np.abs(np.add(np.add(-2 * np.dot(X, X.T), sumX).T, sumX)) )
     else:
         try:
             from scipy.spatial import distance
