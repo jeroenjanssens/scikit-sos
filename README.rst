@@ -2,10 +2,9 @@ scikit-sos
 ==========
 
 scikit-sos is a Python module for Stochastic Outlier Selection (SOS). It
-is compatible with scikit-learn.
-
-SOS is an unsupervised outlier selection algorithm. It uses the concept
-of affinity to compute an outlier probability for each data point.
+is compatible with scikit-learn. SOS is an unsupervised outlier selection
+algorithm. It uses the concept of affinity to compute an outlier probability
+for each data point.
 
 .. figure:: https://github.com/jeroenjanssens/scikit-sos/raw/master/doc/sos.png
    :alt: SOS
@@ -36,7 +35,7 @@ Usage
     >>> X = iris.drop("Name", axis=1).values
     >>> iris["score"] = detector.predict(X)
     >>> iris.sort_values("score", ascending=False).head(10)
-        SepalLength  SepalWidth  PetalLength  PetalWidth             Name     score
+         SepalLength  SepalWidth  PetalLength  PetalWidth             Name     score
     41           4.5         2.3          1.3         0.3      Iris-setosa  0.981898
     106          4.9         2.5          4.5         1.7   Iris-virginica  0.964381
     22           4.6         3.6          1.0         0.2      Iris-setosa  0.957945
@@ -52,11 +51,8 @@ Usage
 Selecting outliers from the command line
 ----------------------------------------
 
-A Python implementation of the SOS algorithm can be found in the sksos
-directory. This implementation only depends on NumPy and can be used
-from the command-line. For example, if we apply SOS with a perplexity of
-20 to the Iris dataset, which is included, we obtain the following
-outlier probabilities:
+This module also includes a command-line tool called `sos`.
+To illustrate, we apply SOS with a perplexity of 10 to the Iris dataset:
 
 .. code:: bash
 
@@ -77,16 +73,17 @@ outlier probabilities:
 
 
 Adding a threshold causes SOS to output 0s and 1s instead of outlier
-probabilities. If we set the threshold to 0.75 then we see that out of
-the 150 data points, 6 are selected as outliers:
+probabilities. If we set the threshold to 0.8 then we see that out of
+the 150 data points, 8 are selected as outliers:
 
 .. code:: bash
 
-    < iris.csv ./sos -p 30 -t 0.75 | paste -sd+ | bc
-    6
+    $ curl -sL http://bit.ly/iris-csv |
+    > tail -n +2 | cut -d, -f1-4 |
+    > sos -p 10 -t 0.8 |
+    > paste -sd+ | bc
+    8
 
-Under the hood, SOS simply needs a two-dimensional NumPy array. A PyPI
-package is in the making.
 
 License
 -------
