@@ -1,1 +1,1 @@
-from sos import SOS
+from .sos import SOS
