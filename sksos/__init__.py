@@ -1,1 +1,1 @@
-from sos import *
+from cli import main
