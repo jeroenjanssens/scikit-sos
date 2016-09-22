@@ -11,7 +11,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 
 setup(name='scikit-sos',
-      version='0.1.0',
+      version='0.1.2',
       description='An sklearn-compatible Python implementation of Stochastic Outlier Selection (SOS) for detecting outliers in data.',
       long_description=README,
       author='Jeroen Janssens',
@@ -24,7 +24,7 @@ setup(name='scikit-sos',
       include_package_data=True,
       zip_safe=False,
       entry_points={'console_scripts':
-          ['sos=sos:main']
+          ['sos=sksos.cli:main']
     }
 )
 

@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from sos import SOS
+from sksos import SOS
 
 def get_stdout():
     if sys.version_info.major < 3:
