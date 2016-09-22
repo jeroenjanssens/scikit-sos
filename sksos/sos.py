@@ -1,14 +1,4 @@
-#!/usr/bin/env python
-
-import argparse
-import logging
 import numpy as np
-import sys
-
-
-log_format = '%(asctime)-15s  [%(levelname)s] - %(name)s: %(message)s'
-logging.basicConfig(format=log_format, level=logging.INFO)
-log = logging.getLogger('SOS')
 
 class SOS(object):
 
@@ -42,17 +32,13 @@ class SOS(object):
         """Computer dissimilarity matrix."""
 
         (n, d) = X.shape
-        log.debug("The data set is %dx%d", n, d)
         if self.metric == 'none':
             if n != d:
-                log.error(("If you specify 'none' as the metric, the data set "
-                    "should be a square dissimilarity matrix"))
-                exit(1)
+                raise ValueError("If you specify 'none' as the metric, the data set "
+                    "should be a square dissimilarity matrix")
             else:
-                log.debug("The data set is a dissimilarity matrix")
                 D = X
         elif self.metric == 'euclidean':
-            log.debug("Computing dissimilarity matrix using Euclidean metric")
             sumX = np.sum(np.square(X), 1)
 
             # np.abs protects against extremely small negative values
@@ -62,12 +48,9 @@ class SOS(object):
             try:
                 from scipy.spatial import distance
             except ImportError as e:
-                log.error(("Please install scipy if you wish to use a metric "
-                    "other than 'euclidean' or 'none'"))
-                exit(1)
+                raise ImportError("Please install scipy if you wish to use a metric "
+                    "other than 'euclidean' or 'none'")
             else:
-                log.debug("Computing dissimilarity matrix using %s metric",
-                    self.metric.capitalize())
                 D = distance.squareform(distance.pdist(X, self.metric))
         return D
 
@@ -120,7 +103,6 @@ class SOS(object):
             # Set the final row of A
             A[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))] = thisA
 
-        log.debug("Computing affinities (%d/%d)", n, n)
         return A
 
     def a2b(self, A):
@@ -153,51 +135,3 @@ def get_perplexity(D, beta):
     H = np.log(sumA) + beta * np.sum(D * A) / sumA
     return H, A
 
-
-def main():
-    log.setLevel(logging.INFO)
-    parser = argparse.ArgumentParser(description="Stochastic Outlier Selection")
-    parser.add_argument('-b', '--binding-matrix', action='store_true',
-        default=False, help="Print binding matrix", dest="binding_matrix")
-    parser.add_argument('-t', '--threshold', type=float, default=None,
-        help=("Float between 0.0 and 1.0 to use as threshold for selecting "
-            "outliers. By default, this is not set, causing the outlier "
-            "probabilities instead of the classification to be outputted"))
-    parser.add_argument('-d', '--delimiter', type=str, default=',', help=(
-        "String to use to separate values. By default, this is a comma."))
-    parser.add_argument('-i', '--input', type=argparse.FileType('rb'),
-        default=sys.stdin, help=("File to read data set from. By default, "
-            "this is <stdin>."))
-    parser.add_argument('-m', '--metric', type=str, default='euclidean', help=(
-        "String indicating the metric to use to compute the dissimilarity "
-        "matrix. By default, this is 'euclidean'. Use 'none' if the data set "
-        "is a dissimilarity matrix."))
-    parser.add_argument('-o', '--output', type=argparse.FileType('wb'),
-        default=sys.stdout, help=("File to write the computed outlier "
-            "probabilities to. By default, this is <stdout>."))
-    parser.add_argument('-p', '--perplexity', type=float, default=30.0,
-        help="Float to use as perpexity. By default, this is 30.0.")
-    parser.add_argument('-v', '--verbose', action='store_true', default=False,
-        help="Print debug messages to <stderr>.")
-    args = parser.parse_args()
-
-    if args.verbose:
-        log.setLevel(logging.DEBUG)
-
-    log.debug("Reading data set from %s", args.input.name)
-    X = np.loadtxt(args.input, delimiter=args.delimiter, ndmin=2)
-
-    O = SOS(args.perplexity, args.metric).predict(X)
-
-    if args.threshold is None:
-        log.debug("Writing outlier probabilities to %s", args.output.name)
-        np.savetxt(args.output, O, '%1.8f')
-    else:
-        log.debug("Writing outlier selections to %s", args.output.name)
-        np.savetxt(args.output, O>=args.threshold, '%1d')
-
-    return 0
-
-
-if __name__ == '__main__':
-    exit(main())
