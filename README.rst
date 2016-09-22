@@ -7,7 +7,7 @@ is compatible with scikit-learn.
 SOS is an unsupervised outlier selection algorithm. It uses the concept
 of affinity to compute an outlier probability for each data point.
 
-.. figure:: doc/sos.png
+.. figure:: https://github.com/jeroenjanssens/scikit-sos/raw/master/doc/sos.png
    :alt: SOS
 
 For more information about SOS, see the technical report: J.H.M.
