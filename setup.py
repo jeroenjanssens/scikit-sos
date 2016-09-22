@@ -8,26 +8,22 @@ except ImportError:
     from distutils.core import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.md')).read()
+README = open(os.path.join(here, 'README.rst')).read()
 
-setup(name='sos',
-      version='0.1.0',
-      description='Stochastic Outlier Selection',
+setup(name='scikit-sos',
+      version='0.1.4',
+      description='An sklearn-compatible Python implementation of Stochastic Outlier Selection (SOS) for detecting outliers in data.',
       long_description=README,
       author='Jeroen Janssens',
-      author_email='',
+      author_email='jeroen@jeroenjanssens.com',
       url='https://github.com/jeroenjanssens/sos',
-      license='',
-      package_dir={'sos': 'bin'},
-      packages=['sos'],
-      data_files=[('sos', ['bin/iris.csv'])],
+      license='BSD',
+      packages=['sksos'],
       install_requires=['numpy'],
-
       include_package_data=True,
-    zip_safe=False,
+      zip_safe=False,
       entry_points={'console_scripts':
-          ['sos=sos:main']
+          ['sos=sksos.cli:main']
     }
 )
-
 
