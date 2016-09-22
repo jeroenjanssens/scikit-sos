@@ -20,9 +20,7 @@ setup(name='scikit-sos',
       license='BSD',
       package_dir={'sos': 'sksos'},
       packages=['sos'],
-      data_files=[('sos', ['sksos/iris.csv'])],
       install_requires=['numpy'],
-
       include_package_data=True,
       zip_safe=False,
       entry_points={'console_scripts':
