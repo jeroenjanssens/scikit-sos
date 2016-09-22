@@ -69,9 +69,6 @@ class SOS(object):
         logU = np.log(self.perplexity)
 
         for i in range(n):
-            if i % 100 == 0:
-                log.debug("Computing affinities (%d/%d)", i, n)
-
             # Compute the Gaussian kernel and entropy for the current precision
             betamin = -np.inf
             betamax =  np.inf
