@@ -59,6 +59,7 @@ from the command-line. For example, if we apply SOS with a perplexity of
 outlier probabilities:
 
 .. code:: bash
+
     $ curl -sL http://bit.ly/iris-csv |
     > tail -n +2 | cut -d, -f1-4 |
     > sos -p 10 |
@@ -73,6 +74,7 @@ outlier probabilities:
     0.81984209
     0.77330148
     0.76565738
+
 
 Adding a threshold causes SOS to output 0s and 1s instead of outlier
 probabilities. If we set the threshold to 0.75 then we see that out of
