@@ -9,7 +9,6 @@ import numpy as np
 from sos import SOS
 
 def get_stdout():
-
     if sys.version_info.major < 3:
         return sys.stdout
     else:
@@ -45,7 +44,7 @@ def main():
     if args.threshold is None:
         np.savetxt(args.output, O, '%1.8f')
     else:
-        np.savetxt(args.output, O>=args.threshold, b'%1d')
+        np.savetxt(args.output, O>=args.threshold, '%1d')
 
     return 0
 
