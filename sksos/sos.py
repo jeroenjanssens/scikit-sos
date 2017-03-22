@@ -78,7 +78,7 @@ class SOS(object):
             # Evaluate whether the perplexity is within tolerance
             Hdiff = H - logU
             tries = 0
-            while np.isnan(Hdiff) or (np.abs(Hdiff) > self.eps and tries < 5000):
+            while (np.isnan(Hdiff) or np.abs(Hdiff) > self.eps) and tries < 5000:
                 if np.isnan(Hdiff):
                     beta[i] = beta[i] / 10.0
                 # If not, increase or decrease precision
