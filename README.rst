@@ -33,6 +33,7 @@ Usage
     >>> from sksos import SOS
     >>> iris = pd.read_csv("http://bit.ly/iris-csv")
     >>> X = iris.drop("Name", axis=1).values
+    >>> detector = SOS() 
     >>> iris["score"] = detector.predict(X)
     >>> iris.sort_values("score", ascending=False).head(10)
          SepalLength  SepalWidth  PetalLength  PetalWidth             Name     score
