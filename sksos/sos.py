@@ -1,7 +1,15 @@
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
 
-class SOS(object):
+# Type aliases
+FloatArray = NDArray[np.floating[Any]]
 
+
+class SOS:
     """Stochastic Outlier Selection.
 
     Copyright (c) 2013, Jeroen Janssens
@@ -22,20 +30,26 @@ class SOS(object):
 
     """
 
-    def __init__(self, perplexity=30, metric='euclidean', eps=1e-5):
+    def __init__(
+        self,
+        perplexity: float = 30,
+        metric: str = 'euclidean',
+        eps: float = 1e-5,
+    ) -> None:
         self.perplexity = perplexity
         self.metric = metric.lower()
         self.eps = eps
 
-
-    def x2d(self, X):
-        """Computer dissimilarity matrix."""
-
+    def x2d(self, X: ArrayLike) -> FloatArray:
+        """Compute dissimilarity matrix."""
+        X = np.asarray(X, dtype=float)
         (n, d) = X.shape
         if self.metric == 'none':
             if n != d:
-                raise ValueError("If you specify 'none' as the metric, the data set "
-                    "should be a square dissimilarity matrix")
+                raise ValueError(
+                    "If you specify 'none' as the metric, the data set "
+                    'should be a square dissimilarity matrix'
+                )
             else:
                 D = X
         elif self.metric == 'euclidean':
@@ -43,19 +57,20 @@ class SOS(object):
 
             # np.abs protects against extremely small negative values
             # that may arise due to floating point arithmetic errors
-            D = np.sqrt( np.abs(np.add(np.add(-2 * np.dot(X, X.T), sumX).T, sumX)) )
+            D = np.sqrt(np.abs(np.add(np.add(-2 * np.dot(X, X.T), sumX).T, sumX)))
         else:
             try:
                 from scipy.spatial import distance
-            except ImportError as e:
-                raise ImportError("Please install scipy if you wish to use a metric "
-                    "other than 'euclidean' or 'none'")
+            except ImportError as err:
+                raise ImportError(
+                    'Please install scipy if you wish to use a metric '
+                    "other than 'euclidean' or 'none'"
+                ) from err
             else:
                 D = distance.squareform(distance.pdist(X, self.metric))
         return D
 
-
-    def d2a(self, D):
+    def d2a(self, D: FloatArray) -> FloatArray:
         """Return affinity matrix.
 
         Performs a binary search to get affinities in such a way that each
@@ -71,8 +86,8 @@ class SOS(object):
         for i in range(n):
             # Compute the Gaussian kernel and entropy for the current precision
             betamin = -np.inf
-            betamax =  np.inf
-            Di = D[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))]
+            betamax = np.inf
+            Di = D[i, np.concatenate((np.r_[0:i], np.r_[i + 1 : n]))]
             (H, thisA) = get_perplexity(Di, beta[i])
 
             # Evaluate whether the perplexity is within tolerance
@@ -100,22 +115,26 @@ class SOS(object):
                 tries += 1
 
             # Set the final row of A
-            A[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))] = thisA
+            A[i, np.concatenate((np.r_[0:i], np.r_[i + 1 : n]))] = thisA
 
         return A
 
-    def a2b(self, A):
-        B = A / A.sum(axis=1)[:,np.newaxis]
+    def a2b(self, A: FloatArray) -> FloatArray:
+        """Convert affinity to binding probability."""
+        B: FloatArray = A / A.sum(axis=1)[:, np.newaxis]
         return B
 
-    def b2o(self, B):
-        O = np.prod(1-B, 0)
+    def b2o(self, B: FloatArray) -> FloatArray:
+        """Convert binding probability to outlier probability."""
+        O: FloatArray = np.prod(1 - B, 0)
         return O
 
-    def fit(self, X):
-        pass
+    def fit(self, X: ArrayLike) -> SOS:
+        """Fit the model (sklearn compatibility)."""
+        return self
 
-    def predict(self, X):
+    def predict(self, X: ArrayLike) -> FloatArray:
+        """Predict outlier scores."""
         D = self.x2d(X)
         A = self.d2a(D)
         B = self.a2b(A)
@@ -123,14 +142,15 @@ class SOS(object):
         return O
 
 
-def get_perplexity(D, beta):
+def get_perplexity(
+    D: FloatArray,
+    beta: float | FloatArray,
+) -> tuple[float | FloatArray, FloatArray]:
     """Compute the perplexity and the A-row for a specific value of the
     precision of a Gaussian distribution.
 
     """
-
     A = np.exp(-D * beta)
     sumA = sum(A)
     H = np.log(sumA) + beta * np.sum(D * A) / sumA
     return H, A
-
