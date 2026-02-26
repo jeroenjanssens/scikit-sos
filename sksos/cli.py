@@ -72,7 +72,7 @@ def main() -> int:
 
     X = np.loadtxt(args.input, delimiter=args.delimiter, ndmin=2)
 
-    O = SOS(args.perplexity, args.metric).predict(X)
+    O = SOS(args.perplexity, args.metric).fit(X).predict(X)
 
     if args.threshold is None:
         np.savetxt(args.output, O, '%1.8f')
