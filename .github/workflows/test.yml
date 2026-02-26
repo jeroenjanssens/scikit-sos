@@ -23,7 +23,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv pip install -e ".[test]"
+        run: uv venv && uv pip install -e ".[test]"
 
       - name: Run tests
         run: uv run pytest
@@ -44,10 +44,10 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv pip install ruff mypy numpy
+        run: uv venv && uv pip install -e ".[sklearn]" ruff mypy
 
       - name: Run ruff
-        run: ruff check .
+        run: uv run ruff check .
 
       - name: Run mypy
-        run: mypy sksos
+        run: uv run mypy sksos

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scikit-sos"
-version = "0.2.0"
+version = "0.3.0"
 description = "A scikit-learn compatible implementation of Stochastic Outlier Selection (SOS) for detecting outliers."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -30,10 +30,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+sklearn = ["scikit-learn>=1.0.0"]
 scipy = ["scipy>=1.7.0"]
 test = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
+    "scikit-learn>=1.0.0",
     "scipy>=1.7.0",
 ]
 dev = [
@@ -90,6 +92,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*" = ["S101"]
+"tests/test_sklearn_integration.py" = ["S101", "E402"]
 
 [tool.ruff.format]
 quote-style = "single"
@@ -125,4 +128,8 @@ pretty = true
 
 [[tool.mypy.overrides]]
 module = "scipy.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sklearn.*"
 ignore_missing_imports = true
