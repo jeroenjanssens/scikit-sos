@@ -1,0 +1,128 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scikit-sos"
+version = "0.2.0"
+description = "A scikit-learn compatible implementation of Stochastic Outlier Selection (SOS) for detecting outliers."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "BSD-3-Clause" }
+authors = [
+    { name = "Jeroen Janssens", email = "jeroen@jeroenjanssens.com" }
+]
+keywords = ["outlier-detection", "machine-learning", "scikit-learn", "anomaly-detection"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.20.0",
+]
+
+[project.optional-dependencies]
+scipy = ["scipy>=1.7.0"]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "scipy>=1.7.0",
+]
+dev = [
+    "scikit-sos[test]",
+    "ruff>=0.8.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/jeroenjanssens/scikit-sos"
+Repository = "https://github.com/jeroenjanssens/scikit-sos"
+
+[project.scripts]
+sos = "sksos.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sksos"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/sksos",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+]
+
+# Ruff configuration
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "PT",     # flake8-pytest-style
+    "SIM",    # flake8-simplify
+    "NPY",    # numpy-specific rules
+    "RUF",    # ruff-specific rules
+]
+ignore = [
+    "E741",   # ambiguous variable name (A, B, D, O, X are conventional in ML)
+    "N803",   # argument name should be lowercase (X is conventional in ML)
+    "N806",   # variable should be lowercase (A, B, D, O are conventional)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["S101"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+
+[tool.ruff.lint.isort]
+known-first-party = ["sksos"]
+
+# Pytest configuration
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = [
+    "--strict-markers",
+    "--cov=sksos",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+
+# Mypy configuration
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_equality = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = "scipy.*"
+ignore_missing_imports = true
