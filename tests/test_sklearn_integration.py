@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
+
+pytest.importorskip('sklearn')
+
+import numpy as np
 from numpy.testing import assert_array_equal
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError

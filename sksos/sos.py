@@ -1,32 +1,106 @@
 from __future__ import annotations
 
+import inspect
 from numbers import Real
 from typing import Any
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from sklearn.base import BaseEstimator, OutlierMixin
-from sklearn.utils.validation import check_is_fitted
 
 try:
-    from sklearn.utils.validation import validate_data as _validate_data_fn
+    from sklearn.base import BaseEstimator, OutlierMixin
+    from sklearn.utils.validation import check_is_fitted
 
-    _USE_STANDALONE_VALIDATE = True
+    HAS_SKLEARN = True
 except ImportError:
+    HAS_SKLEARN = False
+
+if HAS_SKLEARN:
+    try:
+        from sklearn.utils.validation import validate_data as _validate_data_fn
+
+        _USE_STANDALONE_VALIDATE = True
+    except ImportError:
+        _USE_STANDALONE_VALIDATE = False
+
+    try:
+        from sklearn.utils._param_validation import Interval
+
+        _HAS_PARAM_VALIDATION = True
+    except ImportError:
+        _HAS_PARAM_VALIDATION = False
+else:
     _USE_STANDALONE_VALIDATE = False
-
-try:
-    from sklearn.utils._param_validation import Interval
-
-    HAS_PARAM_VALIDATION = True
-except ImportError:
-    HAS_PARAM_VALIDATION = False
+    _HAS_PARAM_VALIDATION = False
 
 # Type aliases
 FloatArray = NDArray[np.floating[Any]]
 
 
-class SOS(BaseEstimator, OutlierMixin):
+class _BaseEstimator:
+    """Minimal sklearn-compatible base when sklearn is not installed."""
+
+    def get_params(self, deep: bool = True) -> dict[str, Any]:
+        params: dict[str, Any] = {}
+        for name in inspect.signature(self.__init__).parameters:  # type: ignore[misc]
+            if name == 'self':
+                continue
+            params[name] = getattr(self, name)
+        return params
+
+    def set_params(self, **params: Any) -> _BaseEstimator:
+        for key, value in params.items():
+            if not hasattr(self, key):
+                raise ValueError(f'Invalid parameter {key!r}')
+            setattr(self, key, value)
+        return self
+
+    def __repr__(self) -> str:
+        cls_name = type(self).__name__
+        sig = inspect.signature(self.__init__)  # type: ignore[misc]
+        parts = []
+        for name, param in sig.parameters.items():
+            if name == 'self':
+                continue
+            value = getattr(self, name)
+            if param.default is not inspect.Parameter.empty and value == param.default:
+                continue
+            parts.append(f'{name}={value!r}')
+        return f'{cls_name}({", ".join(parts)})'
+
+
+def _validate_data_fallback(
+    estimator: Any,
+    X: ArrayLike,
+    *,
+    reset: bool = True,
+) -> FloatArray:
+    X_arr: FloatArray = np.asarray(X, dtype=np.float64)
+    if X_arr.ndim == 1:
+        raise ValueError(
+            'Expected 2D array, got 1D array instead.\n'
+            'Reshape your data either using array.reshape(-1, 1) if your data has '
+            'a single feature or array.reshape(1, -1) if it contains a single sample.'
+        )
+    if not np.all(np.isfinite(X_arr)):
+        if np.any(np.isnan(X_arr)):
+            raise ValueError('Input X contains NaN.')
+        raise ValueError('Input X contains infinity.')
+    if reset:
+        estimator.n_features_in_ = X_arr.shape[1]
+    else:
+        if X_arr.shape[1] != estimator.n_features_in_:
+            raise ValueError(
+                f'X has {X_arr.shape[1]} features, but {type(estimator).__name__} is expecting '
+                f'{estimator.n_features_in_} features as input.'
+            )
+    return X_arr
+
+
+_Base = (BaseEstimator, OutlierMixin) if HAS_SKLEARN else (_BaseEstimator,)
+
+
+class SOS(*_Base):  # type: ignore[misc]
     """Stochastic Outlier Selection.
 
     SOS is an unsupervised outlier detection algorithm that uses the concept
@@ -84,7 +158,7 @@ class SOS(BaseEstimator, OutlierMixin):
     (5,)
     """
 
-    if HAS_PARAM_VALIDATION:
+    if _HAS_PARAM_VALIDATION:
         _parameter_constraints: dict[str, list[Any]] = {
             'perplexity': [Interval(Real, 0, None, closed='neither')],
             'metric': [str],
@@ -134,30 +208,33 @@ class SOS(BaseEstimator, OutlierMixin):
         self : SOS
             Fitted estimator.
         """
-        if HAS_PARAM_VALIDATION:
+        if _HAS_PARAM_VALIDATION:
             self._validate_params()
         else:
             self._validate_params_manual()
 
-        if _USE_STANDALONE_VALIDATE:
-            X_validated: FloatArray = _validate_data_fn(
-                self,
-                X,
-                accept_sparse=False,
-                dtype=np.float64,
-                ensure_2d=True,
-                ensure_all_finite=True,
-                copy=False,
-            )
+        if HAS_SKLEARN:
+            if _USE_STANDALONE_VALIDATE:
+                X_validated: FloatArray = _validate_data_fn(
+                    self,
+                    X,
+                    accept_sparse=False,
+                    dtype=np.float64,
+                    ensure_2d=True,
+                    ensure_all_finite=True,
+                    copy=False,
+                )
+            else:
+                X_validated = self._validate_data(
+                    X,
+                    accept_sparse=False,
+                    dtype=np.float64,
+                    ensure_2d=True,
+                    force_all_finite=True,
+                    copy=False,
+                )
         else:
-            X_validated = self._validate_data(
-                X,
-                accept_sparse=False,
-                dtype=np.float64,
-                ensure_2d=True,
-                force_all_finite=True,
-                copy=False,
-            )
+            X_validated = _validate_data_fallback(self, X, reset=True)
 
         metric_lower = self.metric.lower()
         if metric_lower == 'none':
@@ -184,26 +261,35 @@ class SOS(BaseEstimator, OutlierMixin):
             Outlier probability for each sample. Values are in [0, 1],
             where higher values indicate more outlier-like samples.
         """
-        check_is_fitted(self)
-        if _USE_STANDALONE_VALIDATE:
-            X_validated: FloatArray = _validate_data_fn(
-                self,
-                X,
-                accept_sparse=False,
-                dtype=np.float64,
-                ensure_2d=True,
-                ensure_all_finite=True,
-                reset=False,
-            )
+        if HAS_SKLEARN:
+            check_is_fitted(self)
+            if _USE_STANDALONE_VALIDATE:
+                X_validated: FloatArray = _validate_data_fn(
+                    self,
+                    X,
+                    accept_sparse=False,
+                    dtype=np.float64,
+                    ensure_2d=True,
+                    ensure_all_finite=True,
+                    reset=False,
+                )
+            else:
+                X_validated = self._validate_data(
+                    X,
+                    accept_sparse=False,
+                    dtype=np.float64,
+                    ensure_2d=True,
+                    force_all_finite=True,
+                    reset=False,
+                )
         else:
-            X_validated = self._validate_data(
-                X,
-                accept_sparse=False,
-                dtype=np.float64,
-                ensure_2d=True,
-                force_all_finite=True,
-                reset=False,
-            )
+            if not hasattr(self, 'n_features_in_'):
+                raise AttributeError(
+                    f'This {type(self).__name__} instance is not fitted yet. '
+                    f"Call 'fit' with appropriate arguments before using this estimator."
+                )
+            X_validated = _validate_data_fallback(self, X, reset=False)
+
         D = self._x2d(X_validated)
         A = self._d2a(D)
         B = self._a2b(A)
