@@ -85,7 +85,7 @@ from numpy.typing import NDArray
 # Type hints work automatically
 detector: SOS = SOS(perplexity=20)
 data: NDArray = np.array([[1, 2], [3, 4]])
-scores: NDArray = detector.predict(data)
+scores: NDArray = detector.fit(data).predict(data)
 ```
 
 ## Usage
@@ -96,7 +96,7 @@ scores: NDArray = detector.predict(data)
 >>> iris = pd.read_csv("http://bit.ly/iris-csv")
 >>> X = iris.drop("Name", axis=1).values
 >>> detector = SOS()
->>> iris["score"] = detector.predict(X)
+>>> iris["score"] = detector.fit(X).predict(X)
 >>> iris.sort_values("score", ascending=False).head(10)
      SepalLength  SepalWidth  PetalLength  PetalWidth             Name     score
 41           4.5         2.3          1.3         0.3      Iris-setosa  0.981898
@@ -109,6 +109,50 @@ scores: NDArray = detector.predict(data)
 108          6.7         2.5          5.8         1.8   Iris-virginica  0.819842
 44           5.1         3.8          1.9         0.4      Iris-setosa  0.773301
 100          6.3         3.3          6.0         2.5   Iris-virginica  0.765657
+```
+
+## scikit-learn Integration
+
+SOS is a fully compatible scikit-learn estimator, inheriting from `BaseEstimator` and `OutlierMixin`.
+
+### Using in Pipelines
+
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sksos import SOS
+
+pipe = Pipeline([
+    ('scaler', StandardScaler()),
+    ('sos', SOS(perplexity=20)),
+])
+pipe.fit(X)
+scores = pipe.predict(X)
+```
+
+### API Methods
+
+```python
+detector = SOS(perplexity=20)
+
+# Fit and predict separately
+detector.fit(X)
+scores = detector.predict(X)
+
+# Or in one call
+scores = detector.fit_predict(X)
+
+# Aliases
+scores = detector.score_samples(X)
+scores = detector.decision_function(X)
+```
+
+### Parameter Inspection
+
+```python
+detector = SOS(perplexity=20, metric='euclidean')
+detector.get_params()   # {'perplexity': 20, 'metric': 'euclidean', 'eps': 1e-05}
+detector.set_params(perplexity=30)
 ```
 
 ## Command Line Interface
