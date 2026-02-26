@@ -91,3 +91,13 @@ ENV/
 .ropeproject
 
 .\#*
+
+# Modern Python tooling
+uv.lock
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Type checking
+.dmypy.json
+dmypy.json
