@@ -1,3 +1,6 @@
-from .sos import SOS
+from __future__ import annotations
 
-__version__ = '0.1.10'
+from sksos.sos import SOS
+
+__version__ = '0.2.0'
+__all__ = ['SOS', '__version__']
