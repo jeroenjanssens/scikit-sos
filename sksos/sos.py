@@ -2,7 +2,15 @@ from __future__ import annotations
 
 import inspect
 from numbers import Real
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import sys
+
+    if sys.version_info >= (3, 10):
+        from typing import TypeAlias
+    else:
+        from typing_extensions import TypeAlias
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -34,7 +42,7 @@ else:
     _HAS_PARAM_VALIDATION = False
 
 # Type aliases
-FloatArray = NDArray[np.floating[Any]]
+FloatArray: TypeAlias = NDArray[np.floating[Any]]
 
 
 class _BaseEstimator:
